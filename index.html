@@ -202,7 +202,7 @@ function parseRow(line){
 }
 
 function normalizarTipo(raw){
-  const palabrasClave=['FARDO','DOC','1/2 DOC','MEDIA DOC','1/2DOC'];
+  const palabrasClave=['1/2 DOC','MEDIA DOC','1/2DOC','FARDO','DOC'];
   const upper=raw.toUpperCase().trim();
   for(const k of palabrasClave){
     if(upper.startsWith(k)||upper.includes(k))return k;
