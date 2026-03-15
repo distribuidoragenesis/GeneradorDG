@@ -202,12 +202,17 @@ function parseRow(line){
 }
 
 function normalizarTipo(raw){
-  const palabrasClave=['1/2 DOC','MEDIA DOC','1/2DOC','FARDO','DOC'];
   const upper=raw.toUpperCase().trim();
-  for(const k of palabrasClave){
-    if(upper.startsWith(k)||upper.includes(k))return k;
-  }
+  if(upper.includes('1/2')||upper.includes('MEDIA'))return '1/2 DOC';
+  if(upper.includes('FARDO'))return 'FARDO';
+  if(upper.includes('DOC'))return 'DOC';
   return upper.replace(/\s*\d+\s*(UDS|PZS|PCS|UNI|UNIDADES?|PIEZAS?)?/gi,'').trim();
+}
+function columnaCSV(tipo){
+  if(tipo==='1/2 DOC')return 'precio_media_docena';
+  if(tipo==='DOC')return 'precio_docena';
+  if(tipo==='FARDO')return 'precio_fardo';
+  return 'precio_'+tipo.toLowerCase().replace(/[^a-z0-9]/g,'_');
 }
 
 function parseMayoreo(str){
@@ -291,9 +296,9 @@ function buildOutputRow(row){
       const val=row._mayoreo[tipo]||'';
       if(val!==''){
         const numVal=parseFloat(val);
-        out['precio_'+tipo]=modMayoreo?applyPriceMod(numVal):numVal.toFixed(2);
+        out[columnaCSV(tipo)]=modMayoreo?applyPriceMod(numVal):numVal.toFixed(2);
       } else {
-        out['precio_'+tipo]='';
+        out[columnaCSV(tipo)]='';
       }
     });
   }
@@ -315,7 +320,8 @@ function showPreview(rows){
   const cols=Object.keys(sampleOut[0]);
   let html='<table><thead><tr>';
   cols.forEach(c=>{
-    const label=c.startsWith('precio_')?c.replace('precio_',''):c;
+    const labelMap={'precio_media_docena':'1/2 DOC','precio_docena':'DOC','precio_fardo':'FARDO'};
+    const label=labelMap[c]||c;
     const isMayoreo=c.startsWith('precio_');
     html+=`<th style="${isMayoreo?'color:#185FA5':''}">${label}</th>`;
   });
