@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de Importación de Inventario v2</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#f5f5f0;color:#1a1a1a;min-height:100vh;padding:2rem 1rem}
+.container{max-width:720px;margin:0 auto;background:#fff;border-radius:16px;padding:2rem;border:0.5px solid #e0e0d8}
+.header{margin-bottom:1.5rem}
+.header h2{font-size:20px;font-weight:500}
+.header p{font-size:14px;color:#666;margin-top:4px}
+.drop-zone{border:1.5px dashed #ccc;border-radius:12px;padding:2rem 1.5rem;text-align:center;cursor:pointer;transition:all 0.2s;background:#fafaf8}
+.drop-zone:hover,.drop-zone.drag{border-color:#378ADD;background:#e6f1fb33}
+.drop-zone p{font-size:14px;color:#666}
+.drop-zone strong{color:#1a1a1a;font-weight:500}
+.section-label{font-size:11px;font-weight:500;color:#666;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em}
+.config{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:1rem 0}
+.field label{font-size:13px;color:#666;display:block;margin-bottom:5px}
+.field input,.field select{width:100%;height:36px;border:0.5px solid #ccc;border-radius:8px;padding:0 10px;font-size:14px;background:#fff;color:#1a1a1a}
+.field input:focus,.field select:focus{outline:none;border-color:#378ADD}
+.check-row{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:14px;cursor:pointer}
+.check-row input[type=checkbox]{width:16px;height:16px;accent-color:#378ADD;cursor:pointer}
+.divider{height:0.5px;background:#e5e5e0;margin:1.25rem 0}
+.mayoreo-box{background:#fafaf8;border:0.5px solid #e0e0d8;border-radius:12px;padding:14px 16px;margin:10px 0}
+.mayoreo-tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.tag{display:inline-flex;align-items:center;gap:6px;background:#fff;border:0.5px solid #ccc;border-radius:8px;padding:5px 10px;font-size:13px}
+.tag-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.preview{background:#fafaf8;border-radius:12px;border:0.5px solid #e0e0d8;overflow:auto;margin:1rem 0;max-height:260px}
+.preview-head{padding:10px 14px;border-bottom:0.5px solid #e0e0d8;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fafaf8}
+.preview-head span{font-size:13px;color:#666}
+.preview-head strong{font-size:13px;font-weight:500}
+.preview table{width:100%;font-size:12px;border-collapse:collapse;min-width:600px}
+.preview th{padding:8px 10px;text-align:left;color:#666;font-weight:500;border-bottom:0.5px solid #e0e0d8;font-size:11px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;background:#fafaf8}
+.preview td{padding:7px 10px;border-bottom:0.5px solid #e0e0d8;white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis}
+.preview tr:last-child td{border-bottom:none}
+.mayoreo-cell{font-size:11px;color:#666}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:1rem 0}
+.stat{background:#fafaf8;border-radius:8px;padding:12px;text-align:center;border:0.5px solid #e0e0d8}
+.stat .num{font-size:22px;font-weight:500}
+.stat .lbl{font-size:12px;color:#666;margin-top:2px}
+.btn-row{display:flex;gap:10px;margin-top:1.25rem;flex-wrap:wrap}
+.btn{height:38px;padding:0 20px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;border:0.5px solid #ccc;background:#fff;color:#1a1a1a;transition:all .15s}
+.btn:hover{background:#fafaf8}
+.btn:active{transform:scale(.98)}
+.btn.primary{background:#185FA5;color:#E6F1FB;border-color:#185FA5}
+.btn.primary:hover{background:#0C447C}
+.btn.success{background:#3B6D11;color:#EAF3DE;border-color:#3B6D11}
+.btn.success:hover{background:#27500A}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.progress-bar{height:4px;background:#e0e0d8;border-radius:2px;overflow:hidden;margin:8px 0}
+.progress-fill{height:100%;background:#185FA5;border-radius:2px;transition:width .3s}
+.msg{padding:10px 14px;border-radius:8px;font-size:13px;margin:10px 0}
+.msg.success{background:#EAF3DE;color:#27500A}
+.msg.warn{background:#FAEEDA;color:#633806}
+.msg.error{background:#FCEBEB;color:#791F1F}
+.msg.info{background:#E6F1FB;color:#0C447C}
+.file-info{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#fafaf8;border-radius:8px;border:0.5px solid #e0e0d8;font-size:13px;margin-top:10px}
+.file-info svg{width:18px;height:18px;stroke:#185FA5;flex-shrink:0}
+.file-name{font-weight:500}
+.file-size{color:#666;margin-left:auto}
+.parts-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:1rem 0}
+.part-card{background:#fff;border:0.5px solid #e0e0d8;border-radius:8px;padding:12px 14px}
+.part-card .part-title{font-size:13px;font-weight:500}
+.part-card .part-info{font-size:12px;color:#666;margin-top:4px}
+.badge{display:inline-block;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:500;background:#E6F1FB;color:#0C447C;margin-left:6px}
+@media(max-width:500px){
+  .config{grid-template-columns:1fr}
+  .parts-grid{grid-template-columns:1fr}
+  .stats{grid-template-columns:1fr 1fr}
+  .btn-row{flex-direction:column}
+}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+  <h2>Sistema de importación de inventario</h2>
+  <p>Convierte tu CSV al formato correcto — incluye precios de menudeo y mayoreo</p>
+</div>
+
+<div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+  <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:36px;height:36px;stroke:#888;margin:0 auto 10px;display:block">
+    <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M16 12l-4-4m0 0l-4 4m4-4v12"/>
+  </svg>
+  <p><strong>Arrastra tu archivo CSV aquí</strong></p>
+  <p style="margin-top:4px">o haz clic para seleccionar</p>
+  <input type="file" id="fileInput" accept=".csv" style="display:none">
+</div>
+
+<div id="fileInfoRow"></div>
+
+<div class="divider"></div>
+
+<div class="section-label">Configuración general</div>
+<div class="config">
+  <div class="field">
+    <label>Stock a asignar</label>
+    <input type="number" id="stockVal" value="1000" min="0">
+  </div>
+  <div class="field">
+    <label>Modificar precio menudeo</label>
+    <select id="precioOp">
+      <option value="original">Precio original</option>
+      <option value="mitad">Dividir a la mitad</option>
+      <option value="doble">Multiplicar x2</option>
+      <option value="custom">Porcentaje personalizado</option>
+    </select>
+  </div>
+  <div class="field" id="pctField" style="display:none">
+    <label>Porcentaje (%)</label>
+    <input type="number" id="pctVal" value="100" min="1">
+  </div>
+  <div class="field">
+    <label>Dividir en partes</label>
+    <select id="partsOp">
+      <option value="1">Un solo archivo</option>
+      <option value="2" selected>2 partes</option>
+      <option value="3">3 partes</option>
+      <option value="4">4 partes</option>
+    </select>
+  </div>
+</div>
+
+<label class="check-row"><input type="checkbox" id="chkId"> Incluir columna id vacía</label>
+
+<div class="divider"></div>
+
+<div class="section-label">Precios de mayoreo <span class="badge">nuevo</span></div>
+<div class="mayoreo-box">
+  <p style="font-size:13px;color:#666;margin-bottom:10px">El sistema detecta automáticamente los tipos de mayoreo en tu CSV y los exporta como columnas separadas.</p>
+  <div class="mayoreo-tags">
+    <div class="tag"><div class="tag-dot" style="background:#378ADD"></div>1/2 DOC</div>
+    <div class="tag"><div class="tag-dot" style="background:#BA7517"></div>DOC</div>
+    <div class="tag"><div class="tag-dot" style="background:#1D9E75"></div>FARDO</div>
+    <div class="tag"><div class="tag-dot" style="background:#993556"></div>Otros detectados automáticamente</div>
+  </div>
+  <div style="margin-top:12px">
+    <label class="check-row"><input type="checkbox" id="chkMayoreo" checked> Incluir precios de mayoreo en el CSV</label>
+    <label class="check-row"><input type="checkbox" id="chkMayoreoModificar"> Aplicar mismo modificador de precio al mayoreo</label>
+  </div>
+</div>
+
+<div id="mayoreoDetectado" style="display:none;margin-top:8px"></div>
+
+<div id="previewSection" style="display:none">
+  <div class="divider"></div>
+  <div id="statsRow" class="stats"></div>
+  <div class="section-label" style="margin-top:1rem">Vista previa</div>
+  <div class="preview" id="previewTable"></div>
+  <div id="msgRow"></div>
+  <div class="btn-row">
+    <button class="btn primary" id="btnProcess" onclick="processAndDownload()">Generar y descargar archivos</button>
+    <button class="btn" onclick="resetApp()">Limpiar</button>
+  </div>
+  <div id="progressRow" style="display:none;margin-top:10px">
+    <div class="progress-bar"><div class="progress-fill" id="pFill" style="width:0%"></div></div>
+    <p style="font-size:12px;color:#666;margin-top:4px" id="pLabel">Procesando...</p>
+  </div>
+  <div id="partsRow" style="display:none">
+    <div class="divider"></div>
+    <div class="section-label">Archivos listos para descargar</div>
+    <div class="parts-grid" id="partsGrid"></div>
+  </div>
+</div>
+</div>
+
+<script>
+let parsedRows=[],headers=[],detectedMayoreo=[];
+
+document.getElementById('precioOp').addEventListener('change',function(){
+  document.getElementById('pctField').style.display=this.value==='custom'?'block':'none';
+});
+
+const dropZone=document.getElementById('dropZone');
+dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.classList.add('drag')});
+dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('drag'));
+dropZone.addEventListener('drop',e=>{e.preventDefault();dropZone.classList.remove('drag');const f=e.dataTransfer.files[0];if(f)handleFile(f)});
+document.getElementById('fileInput').addEventListener('change',e=>{if(e.target.files[0])handleFile(e.target.files[0])});
+
+function handleFile(file){
+  if(!file.name.endsWith('.csv')){showMsg('msgRow','Solo se aceptan archivos .csv','error');return}
+  const reader=new FileReader();
+  reader.onload=e=>parseCSV(e.target.result,file);
+  reader.readAsText(file,'UTF-8');
+  const size=file.size<1024*1024?(file.size/1024).toFixed(1)+' KB':(file.size/1024/1024).toFixed(2)+' MB';
+  document.getElementById('fileInfoRow').innerHTML=`<div class="file-info">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+    <span class="file-name">${file.name}</span><span class="file-size">${size}</span></div>`;
+}
+
+function parseRow(line){
+  const r=[];let cur='',inQ=false;
+  for(let i=0;i<line.length;i++){
+    const c=line[i];
+    if(c==='"'){inQ=!inQ}
+    else if(c===','&&!inQ){r.push(cur);cur=''}
+    else{cur+=c}
+  }
+  r.push(cur);return r;
+}
+
+function normalizarTipo(raw){
+  const palabrasClave=['FARDO','DOC','1/2 DOC','MEDIA DOC','1/2DOC'];
+  const upper=raw.toUpperCase().trim();
+  for(const k of palabrasClave){
+    if(upper.startsWith(k)||upper.includes(k))return k;
+  }
+  return upper.replace(/\s*\d+\s*(UDS|PZS|PCS|UNI|UNIDADES?|PIEZAS?)?/gi,'').trim();
+}
+
+function parseMayoreo(str){
+  if(!str||!str.trim())return{};
+  const result={};
+  const parts=str.split('#').filter(p=>p.trim());
+  parts.forEach(part=>{
+    const segs=part.split(':');
+    if(segs.length>=2){
+      const rawNombre=segs[0].trim();
+      const nombre=normalizarTipo(rawNombre);
+      const val=segs[1].replace('%','').trim();
+      if(nombre&&val)result[nombre]=parseFloat(val)||0;
+    }
+  });
+  return result;
+}
+
+function parseCSV(text,file){
+  const lines=text.split('\n').filter(l=>l.trim());
+  const bom=lines[0].charCodeAt(0)===0xFEFF;
+  const headerLine=bom?lines[0].slice(1):lines[0];
+  headers=parseRow(headerLine);
+  parsedRows=[];
+  const mayoreoSet=new Set();
+  for(let i=1;i<lines.length;i++){
+    if(!lines[i].trim())continue;
+    const vals=parseRow(lines[i]);
+    const row={};
+    headers.forEach((h,idx)=>{row[h.trim()]=(vals[idx]||'').trim()});
+    const m=parseMayoreo(row['Precios Adicionales']||'');
+    Object.keys(m).forEach(k=>mayoreoSet.add(k));
+    row._mayoreo=m;
+    parsedRows.push(row);
+  }
+  detectedMayoreo=Array.from(mayoreoSet);
+  const dotColors={'1/2 DOC':'#378ADD','DOC':'#BA7517','FARDO':'#1D9E75'};
+  if(detectedMayoreo.length>0){
+    const tagsHtml=detectedMayoreo.map(k=>{
+      const col=dotColors[k]||'#993556';
+      return `<div class="tag"><div class="tag-dot" style="background:${col}"></div>${k}</div>`;
+    }).join('');
+    document.getElementById('mayoreoDetectado').style.display='block';
+    document.getElementById('mayoreoDetectado').innerHTML=`<div style="font-size:13px;color:#666;margin-bottom:6px">Tipos de mayoreo detectados en tu archivo:</div><div class="mayoreo-tags">${tagsHtml}</div>`;
+  } else {
+    document.getElementById('mayoreoDetectado').style.display='none';
+  }
+  showStats(parsedRows.length);
+  showPreview(parsedRows.slice(0,5));
+  document.getElementById('previewSection').style.display='block';
+  document.getElementById('partsRow').style.display='none';
+  document.getElementById('msgRow').innerHTML='';
+}
+
+function applyPriceMod(val){
+  const op=document.getElementById('precioOp').value;
+  if(op==='mitad')return(val/2).toFixed(2);
+  if(op==='doble')return(val*2).toFixed(2);
+  if(op==='custom')return(val*parseFloat(document.getElementById('pctVal').value)/100).toFixed(2);
+  return val.toFixed(2);
+}
+
+function buildOutputRow(row){
+  const incMayoreo=document.getElementById('chkMayoreo').checked;
+  const modMayoreo=document.getElementById('chkMayoreoModificar').checked;
+  const incId=document.getElementById('chkId').checked;
+  const stock=document.getElementById('stockVal').value;
+  const out={};
+  if(incId)out['id']='';
+  out['sku']=row['Clave']||'';
+  out['nombre']=row['Nombre']||'';
+  out['precio']=applyPriceMod(parseFloat(row['Precio'])||0);
+  out['stock']=stock;
+  out['descripcion']='';
+  out['imgUrl']='';
+  out['Categoría']=row['Categoría']||'';
+  if(incMayoreo&&detectedMayoreo.length>0){
+    detectedMayoreo.forEach(tipo=>{
+      const val=row._mayoreo[tipo]||'';
+      if(val!==''){
+        const numVal=parseFloat(val);
+        out['precio_'+tipo]=modMayoreo?applyPriceMod(numVal):numVal.toFixed(2);
+      } else {
+        out['precio_'+tipo]='';
+      }
+    });
+  }
+  return out;
+}
+
+function showStats(total){
+  const parts=parseInt(document.getElementById('partsOp').value);
+  const perPart=Math.ceil(total/parts);
+  document.getElementById('statsRow').innerHTML=`
+    <div class="stat"><div class="num">${total.toLocaleString()}</div><div class="lbl">Productos</div></div>
+    <div class="stat"><div class="num">${parts}</div><div class="lbl">Archivos</div></div>
+    <div class="stat"><div class="num">~${perPart.toLocaleString()}</div><div class="lbl">Por archivo</div></div>`;
+}
+
+function showPreview(rows){
+  if(!rows.length)return;
+  const sampleOut=rows.map(r=>buildOutputRow(r));
+  const cols=Object.keys(sampleOut[0]);
+  let html='<table><thead><tr>';
+  cols.forEach(c=>{
+    const label=c.startsWith('precio_')?c.replace('precio_',''):c;
+    const isMayoreo=c.startsWith('precio_');
+    html+=`<th style="${isMayoreo?'color:#185FA5':''}">${label}</th>`;
+  });
+  html+='</tr></thead><tbody>';
+  sampleOut.forEach(row=>{
+    html+='<tr>';
+    cols.forEach(c=>{
+      const isMayoreo=c.startsWith('precio_');
+      html+=`<td class="${isMayoreo?'mayoreo-cell':''}" title="${row[c]}">${row[c]}</td>`;
+    });
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+  document.getElementById('previewTable').innerHTML=`
+    <div class="preview-head"><strong>Vista previa</strong><span>primeras ${rows.length} filas</span></div>${html}`;
+}
+
+function toCSV(rows){
+  if(!rows.length)return'';
+  const cols=Object.keys(rows[0]);
+  const lines=[cols.join(',')];
+  rows.forEach(row=>{
+    const vals=cols.map(c=>{
+      const v=String(row[c]||'');
+      return v.includes(',')||v.includes('"')?`"${v.replace(/"/g,'""')}"`  :v;
+    });
+    lines.push(vals.join(','));
+  });
+  return lines.join('\n');
+}
+
+function processAndDownload(){
+  if(!parsedRows.length){showMsg('msgRow','Primero carga un archivo CSV','warn');return}
+  document.getElementById('progressRow').style.display='block';
+  document.getElementById('btnProcess').disabled=true;
+  const pFill=document.getElementById('pFill');
+  const pLabel=document.getElementById('pLabel');
+  const parts=parseInt(document.getElementById('partsOp').value);
+  pFill.style.width='30%';pLabel.textContent='Convirtiendo productos...';
+  setTimeout(()=>{
+    const outputRows=parsedRows.map(r=>buildOutputRow(r));
+    const total=outputRows.length;
+    const chunkSize=Math.ceil(total/parts);
+    pFill.style.width='70%';pLabel.textContent='Generando archivos...';
+    const partsData=[];
+    for(let i=0;i<parts;i++)partsData.push(outputRows.slice(i*chunkSize,(i+1)*chunkSize));
+    setTimeout(()=>{
+      pFill.style.width='100%';pLabel.textContent='Listo.';
+      const grid=document.getElementById('partsGrid');
+      grid.innerHTML='';
+      partsData.forEach((chunk,idx)=>{
+        if(!chunk.length)return;
+        const csv=toCSV(chunk);
+        const fname=parts===1?'inventario_sistema.csv':`inventario_parte${idx+1}.csv`;
+        const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+        const url=URL.createObjectURL(blob);
+        const colCount=Object.keys(chunk[0]).length;
+        grid.innerHTML+=`<div class="part-card">
+          <div class="part-title">${parts===1?'Archivo completo':'Parte '+(idx+1)}</div>
+          <div class="part-info">${chunk.length.toLocaleString()} productos · ${colCount} columnas</div>
+          <a href="${url}" download="${fname}" style="display:block;margin-top:10px">
+            <button class="btn success" style="width:100%;height:32px;font-size:12px">Descargar ${fname}</button>
+          </a></div>`;
+      });
+      document.getElementById('partsRow').style.display='block';
+      document.getElementById('btnProcess').disabled=false;
+      const mayoreoInfo=document.getElementById('chkMayoreo').checked&&detectedMayoreo.length>0?` con precios de ${detectedMayoreo.join(', ')}.`:'.';
+      showMsg('msgRow',`${total.toLocaleString()} productos convertidos correctamente${mayoreoInfo}`,'success');
+    },400);
+  },300);
+}
+
+function showMsg(id,text,type){
+  document.getElementById(id).innerHTML=`<div class="msg ${type}">${text}</div>`;
+}
+
+function resetApp(){
+  parsedRows=[];headers=[];detectedMayoreo=[];
+  document.getElementById('fileInput').value='';
+  document.getElementById('fileInfoRow').innerHTML='';
+  document.getElementById('previewSection').style.display='none';
+  document.getElementById('partsRow').style.display='none';
+  document.getElementById('progressRow').style.display='none';
+  document.getElementById('msgRow').innerHTML='';
+  document.getElementById('mayoreoDetectado').style.display='none';
+}
+
+['stockVal','partsOp'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{if(parsedRows.length)showStats(parsedRows.length)}));
+['precioOp','chkMayoreo','chkMayoreoModificar','chkId'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{if(parsedRows.length)showPreview(parsedRows.slice(0,5))}));
+</script>
+</body>
+</html>
