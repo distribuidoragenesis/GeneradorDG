@@ -243,7 +243,9 @@ function parseCSV(text,file){
     row._mayoreo=m;
     parsedRows.push(row);
   }
-  detectedMayoreo=Array.from(mayoreoSet);
+  const ordenFijo=['1/2 DOC','DOC','FARDO'];
+  const todosDetectados=Array.from(mayoreoSet);
+  detectedMayoreo=[...ordenFijo.filter(k=>todosDetectados.includes(k)),...todosDetectados.filter(k=>!ordenFijo.includes(k))];
   const dotColors={'1/2 DOC':'#378ADD','DOC':'#BA7517','FARDO':'#1D9E75'};
   if(detectedMayoreo.length>0){
     const tagsHtml=detectedMayoreo.map(k=>{
