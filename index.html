@@ -139,6 +139,7 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#f5f5f0;color:#1a
   <div style="margin-top:12px">
     <label class="check-row"><input type="checkbox" id="chkMayoreo" checked> Incluir precios de mayoreo en el CSV</label>
     <label class="check-row"><input type="checkbox" id="chkMayoreoModificar"> Aplicar mismo modificador de precio al mayoreo</label>
+    <label class="check-row"><input type="checkbox" id="chkOtros" checked> Incluir otros tipos detectados automáticamente</label>
   </div>
 </div>
 
@@ -280,7 +281,9 @@ function applyPriceMod(val){
 function buildOutputRow(row){
   const incMayoreo=document.getElementById('chkMayoreo').checked;
   const modMayoreo=document.getElementById('chkMayoreoModificar').checked;
+  const incOtros=document.getElementById('chkOtros').checked;
   const incId=document.getElementById('chkId').checked;
+  const fijos=['1/2 DOC','DOC','FARDO'];
   const stock=document.getElementById('stockVal').value;
   const out={};
   if(incId)out['id']='';
@@ -293,6 +296,8 @@ function buildOutputRow(row){
   out['Categoría']=row['Categoría']||'';
   if(incMayoreo&&detectedMayoreo.length>0){
     detectedMayoreo.forEach(tipo=>{
+      const esOtro=!fijos.includes(tipo);
+      if(esOtro&&!incOtros)return;
       const val=row._mayoreo[tipo]||'';
       if(val!==''){
         const numVal=parseFloat(val);
@@ -410,7 +415,7 @@ function resetApp(){
 }
 
 ['stockVal','partsOp'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{if(parsedRows.length)showStats(parsedRows.length)}));
-['precioOp','chkMayoreo','chkMayoreoModificar','chkId'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{if(parsedRows.length)showPreview(parsedRows.slice(0,5))}));
+['precioOp','chkMayoreo','chkMayoreoModificar','chkId','chkOtros'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{if(parsedRows.length)showPreview(parsedRows.slice(0,5))}));
 </script>
 </body>
 </html>
