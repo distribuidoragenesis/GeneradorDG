@@ -123,8 +123,6 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#f5f5f0;color:#1a
   </div>
 </div>
 
-<label class="check-row"><input type="checkbox" id="chkId"> Incluir columna id vacía</label>
-
 <div class="divider"></div>
 
 <div class="section-label">Precios de mayoreo <span class="badge">nuevo</span></div>
@@ -282,11 +280,9 @@ function buildOutputRow(row){
   const incMayoreo=document.getElementById('chkMayoreo').checked;
   const modMayoreo=document.getElementById('chkMayoreoModificar').checked;
   const incOtros=document.getElementById('chkOtros').checked;
-  const incId=document.getElementById('chkId').checked;
   const fijos=['1/2 DOC','DOC','FARDO'];
   const stock=document.getElementById('stockVal').value;
   const out={};
-  if(incId)out['id']='';
   out['sku']=row['Clave']||'';
   out['nombre']=row['Nombre']||'';
   out['precio']=applyPriceMod(parseFloat(row['Precio'])||0);
@@ -415,7 +411,7 @@ function resetApp(){
 }
 
 ['stockVal','partsOp'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{if(parsedRows.length)showStats(parsedRows.length)}));
-['precioOp','chkMayoreo','chkMayoreoModificar','chkId','chkOtros'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{if(parsedRows.length)showPreview(parsedRows.slice(0,5))}));
+['precioOp','chkMayoreo','chkMayoreoModificar','chkOtros'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{if(parsedRows.length)showPreview(parsedRows.slice(0,5))}));
 </script>
 </body>
 </html>
