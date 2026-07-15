@@ -115,8 +115,8 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#f5f5f0;color:#1a
   <div class="field">
     <label>Dividir en partes</label>
     <select id="partsOp">
-      <option value="1">Un solo archivo</option>
-      <option value="2" selected>2 partes</option>
+      <option value="1" selected>1 parte</option>
+      <option value="2">2 partes</option>
       <option value="3">3 partes</option>
       <option value="4">4 partes</option>
     </select>
@@ -129,9 +129,11 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#f5f5f0;color:#1a
 <div class="mayoreo-box">
   <p style="font-size:13px;color:#666;margin-bottom:10px">El sistema detecta automáticamente los tipos de mayoreo en tu CSV y los exporta como columnas separadas.</p>
   <div class="mayoreo-tags">
+    <div class="tag"><div class="tag-dot" style="background:#185FA5"></div>MAYOR</div>
     <div class="tag"><div class="tag-dot" style="background:#378ADD"></div>1/2 DOC</div>
     <div class="tag"><div class="tag-dot" style="background:#BA7517"></div>DOC</div>
     <div class="tag"><div class="tag-dot" style="background:#1D9E75"></div>FARDO</div>
+    <div class="tag"><div class="tag-dot" style="background:#B0413E"></div>OFERTA</div>
     <div class="tag"><div class="tag-dot" style="background:#993556"></div>Otros detectados automáticamente</div>
   </div>
   <div style="margin-top:12px">
@@ -202,15 +204,19 @@ function parseRow(line){
 
 function normalizarTipo(raw){
   const upper=raw.toUpperCase().trim();
+  if(upper.includes('MAYOR'))return 'MAYOR';
   if(upper.includes('1/2')||upper.includes('MEDIA'))return '1/2 DOC';
   if(upper.includes('FARDO'))return 'FARDO';
+  if(upper.includes('OFERTA'))return 'OFERTA';
   if(upper.includes('DOC'))return 'DOC';
   return upper.replace(/\s*\d+\s*(UDS|PZS|PCS|UNI|UNIDADES?|PIEZAS?)?/gi,'').trim();
 }
 function columnaCSV(tipo){
+  if(tipo==='MAYOR')return 'precio_mayor';
   if(tipo==='1/2 DOC')return 'precio_media_docena';
   if(tipo==='DOC')return 'precio_docena';
   if(tipo==='FARDO')return 'precio_fardo';
+  if(tipo==='OFERTA')return 'precio_oferta';
   return 'precio_'+tipo.toLowerCase().replace(/[^a-z0-9]/g,'_');
 }
 
@@ -252,10 +258,10 @@ function parseCSV(text,file){
     row._mayoreoUnidades=m.unidades;
     parsedRows.push(row);
   }
-  const ordenFijo=['1/2 DOC','DOC','FARDO'];
+  const ordenFijo=['MAYOR','1/2 DOC','DOC','FARDO','OFERTA'];
   const todosDetectados=Array.from(mayoreoSet);
   detectedMayoreo=[...ordenFijo.filter(k=>todosDetectados.includes(k)),...todosDetectados.filter(k=>!ordenFijo.includes(k))];
-  const dotColors={'1/2 DOC':'#378ADD','DOC':'#BA7517','FARDO':'#1D9E75'};
+  const dotColors={'MAYOR':'#185FA5','1/2 DOC':'#378ADD','DOC':'#BA7517','FARDO':'#1D9E75','OFERTA':'#B0413E'};
   if(detectedMayoreo.length>0){
     const fardoUnidadesSample=(parsedRows.find(r=>r._mayoreoUnidades&&r._mayoreoUnidades['FARDO'])||{})._mayoreoUnidades?.['FARDO'];
     const tagsHtml=detectedMayoreo.map(k=>{
@@ -287,7 +293,7 @@ function buildOutputRow(row){
   const incMayoreo=document.getElementById('chkMayoreo').checked;
   const modMayoreo=document.getElementById('chkMayoreoModificar').checked;
   const incOtros=document.getElementById('chkOtros').checked;
-  const fijos=['1/2 DOC','DOC','FARDO'];
+  const fijos=['MAYOR','1/2 DOC','DOC','FARDO','OFERTA'];
   const stock=document.getElementById('stockVal').value;
   const out={};
   out['sku']=row['Clave']||'';
@@ -332,7 +338,7 @@ function showPreview(rows){
   const cols=Object.keys(sampleOut[0]);
   let html='<table><thead><tr>';
   cols.forEach(c=>{
-    const labelMap={'precio_media_docena':'1/2 DOC','precio_docena':'DOC','precio_fardo':'FARDO','unidades_fardo':'FARDO UDS'};
+    const labelMap={'precio_mayor':'MAYOR','precio_media_docena':'1/2 DOC','precio_docena':'DOC','precio_fardo':'FARDO','unidades_fardo':'FARDO UDS','precio_oferta':'OFERTA'};
     const label=labelMap[c]||c;
     const isMayoreo=c.startsWith('precio_')||c==='unidades_fardo';
     html+=`<th style="${isMayoreo?'color:#185FA5':''}">${label}</th>`;
