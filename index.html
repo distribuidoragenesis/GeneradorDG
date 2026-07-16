@@ -318,6 +318,10 @@ function buildOutputRow(row){
         const uf=(row._mayoreoUnidades&&row._mayoreoUnidades['FARDO'])?row._mayoreoUnidades['FARDO']:'';
         out['unidades_fardo']=uf;
       }
+      if(tipo==='MAYOR'){
+        const ue=(row._mayoreoUnidades&&row._mayoreoUnidades['MAYOR'])?row._mayoreoUnidades['MAYOR']:(row._mayoreoUnidades&&row._mayoreoUnidades['FARDO']?row._mayoreoUnidades['FARDO']:'');
+        out['unidades_mayor']=ue;
+      }
     });
   }
   return out;
@@ -338,16 +342,16 @@ function showPreview(rows){
   const cols=Object.keys(sampleOut[0]);
   let html='<table><thead><tr>';
   cols.forEach(c=>{
-    const labelMap={'precio_mayor':'MAYOR','precio_media_docena':'1/2 DOC','precio_docena':'DOC','precio_fardo':'FARDO','unidades_fardo':'FARDO UDS','precio_oferta':'OFERTA'};
+    const labelMap={'precio_mayor':'MAYOR','precio_media_docena':'1/2 DOC','precio_docena':'DOC','precio_fardo':'FARDO','unidades_fardo':'FARDO UDS','unidades_mayor':'MAYOR UDS','precio_oferta':'OFERTA'};
     const label=labelMap[c]||c;
-    const isMayoreo=c.startsWith('precio_')||c==='unidades_fardo';
+    const isMayoreo=c.startsWith('precio_')||c==='unidades_fardo'||c==='unidades_mayor';
     html+=`<th style="${isMayoreo?'color:#185FA5':''}">${label}</th>`;
   });
   html+='</tr></thead><tbody>';
   sampleOut.forEach(row=>{
     html+='<tr>';
     cols.forEach(c=>{
-      const isMayoreo=c.startsWith('precio_')||c==='unidades_fardo';
+      const isMayoreo=c.startsWith('precio_')||c==='unidades_fardo'||c==='unidades_mayor';
       html+=`<td class="${isMayoreo?'mayoreo-cell':''}" title="${row[c]}">${row[c]}</td>`;
     });
     html+='</tr>';
